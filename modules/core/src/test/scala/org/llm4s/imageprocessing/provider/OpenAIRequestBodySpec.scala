@@ -116,17 +116,14 @@ class OpenAIRequestBodySpec extends AnyFlatSpec with Matchers {
       mediaType = MediaType.Jpeg
     )
 
-    // Verify it can be parsed as valid JSON
     noException should be thrownBy ujson.read(serialized)
 
-    // Verify the structure matches OpenAI's expected format
     val json = ujson.read(serialized)
     (json.obj should contain).key("model")
     (json.obj should contain).key("max_tokens")
     (json.obj should contain).key("messages")
     json("messages").arr should not be empty
 
-    // Verify the image URL format is correct
     val imageUrl = json("messages")(0)("content")(1)("image_url")("url").str
     imageUrl should startWith("data:image/")
     imageUrl should include("base64,")
@@ -161,11 +158,10 @@ class OpenAIRequestBodySpec extends AnyFlatSpec with Matchers {
     val o1Model = "o1-preview"
     val legacyModel = "gpt-4"
     val maxTokens = 1000
-    // Create a simple message content
+
     val content = ujson.Obj("type" -> "text", "text" -> "hello")
     val messages = List(OpenAIMessage("user", ujson.Arr(content)))
 
-    // Test o1 model
     val o1Request = OpenAIRequestBody(o1Model, messages, maxTokens)
     val o1Json = writeJs(o1Request).obj
 
@@ -173,7 +169,6 @@ class OpenAIRequestBodySpec extends AnyFlatSpec with Matchers {
     o1Json.keys should not contain "max_tokens"
     o1Json("max_completion_tokens").num shouldBe maxTokens
 
-    // Test legacy model
     val legacyRequest = OpenAIRequestBody(legacyModel, messages, maxTokens)
     val legacyJson = writeJs(legacyRequest).obj
 

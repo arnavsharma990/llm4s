@@ -156,4 +156,29 @@ class OpenAIRequestBodySpec extends AnyFlatSpec with Matchers {
       imageUrl shouldBe s"data:image/$expectedFormat;base64,data"
     }
   }
+
+  it should "use max_completion_tokens for o1 models and max_tokens for others" in {
+    val o1Model = "o1-preview"
+    val legacyModel = "gpt-4"
+    val maxTokens = 1000
+    // Create a simple message content
+    val content = ujson.Obj("type" -> "text", "text" -> "hello")
+    val messages = List(OpenAIMessage("user", ujson.Arr(content)))
+
+    // Test o1 model
+    val o1Request = OpenAIRequestBody(o1Model, messages, maxTokens)
+    val o1Json = writeJs(o1Request).obj
+
+    o1Json.keys should contain("max_completion_tokens")
+    o1Json.keys should not contain "max_tokens"
+    o1Json("max_completion_tokens").num shouldBe maxTokens
+
+    // Test legacy model
+    val legacyRequest = OpenAIRequestBody(legacyModel, messages, maxTokens)
+    val legacyJson = writeJs(legacyRequest).obj
+
+    legacyJson.keys should contain("max_tokens")
+    legacyJson.keys should not contain "max_completion_tokens"
+    legacyJson("max_tokens").num shouldBe maxTokens
+  }
 }

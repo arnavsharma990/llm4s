@@ -1,11 +1,11 @@
 package org.llm4s.imageprocessing.provider
 
 import org.llm4s.imageprocessing.MediaType
-import upickle.default.{ macroRW, ReadWriter => RW, _ }
+import upickle.default.{ReadWriter => RW, _}
 
 private[provider] case class OpenAIMessage(
-  role: String = "user",
-  content: ujson.Value
+    role: String = "user",
+    content: ujson.Value
 )
 
 object OpenAIMessage {
@@ -16,32 +16,44 @@ object OpenAIMessage {
 }
 
 private[provider] case class OpenAIRequestBody(
-  model: String,
-  messages: List[OpenAIMessage],
-  max_tokens: Int
+    model: String,
+    messages: List[OpenAIMessage],
+    max_tokens: Int
 )
 
 object OpenAIRequestBody {
-  implicit val rw: RW[OpenAIRequestBody] = macroRW
+  implicit val rw: RW[OpenAIRequestBody] = readwriter[ujson.Value].bimap[OpenAIRequestBody](
+    request => {
+      // Azure OpenAI requires max_completion_tokens for o1 reasoning models
+      val tokenKey = if (request.model.startsWith("o1")) "max_completion_tokens" else "max_tokens"
+      ujson.Obj(
+        "model" -> request.model,
+        "messages" -> writeJs(request.messages),
+        tokenKey -> request.max_tokens
+      )
+    },
+    json => {
+      // Support reading both keys for backward compatibility
+      val maxTokens = json.obj.get("max_completion_tokens")
+        .orElse(json.obj.get("max_tokens"))
+        .map(_.num.toInt)
+        .getOrElse(throw new java.util.NoSuchElementException("Missing max_tokens or max_completion_tokens"))
 
-  /**
-   * Creates a request body for OpenAI Vision API calls with a single image and prompt.
-   *
-   * @param model The OpenAI model to use (e.g., "gpt-4-vision-preview")
-   * @param maxTokens Maximum tokens in the response
-   * @param prompt The text prompt for image analysis
-   * @param base64Image The base64-encoded image data
-   * @param mediaType The media type of the image
-   * @return Serialized JSON string for the API request
-   */
+      OpenAIRequestBody(
+        model = json("model").str,
+        messages = read[List[OpenAIMessage]](json("messages")),
+        max_tokens = maxTokens
+      )
+    }
+  )
+
   def serialize(
-    model: String,
-    maxTokens: Int,
-    prompt: String,
-    base64Image: String,
-    mediaType: MediaType
+      model: String,
+      maxTokens: Int,
+      prompt: String,
+      base64Image: String,
+      mediaType: MediaType
   ): String = {
-    // OpenAI expects the media type in the data URL format
     val mimeType = mediaType match {
       case MediaType.Jpeg => "jpeg"
       case MediaType.Png  => "png"

@@ -46,7 +46,7 @@ inThisBuild(
       }
     },
     ThisBuild / coverageMinimumStmtTotal := 80,
-    ThisBuild / coverageFailOnMinimum    := false,
+    ThisBuild / coverageFailOnMinimum    := true,
     ThisBuild / coverageHighlighting     := true,
     ThisBuild / coverageExcludedPackages := Seq(
       "org\\.llm4s\\.runner\\..*",

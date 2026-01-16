@@ -9,7 +9,7 @@ parent: Reference
 
 This guide explains **how contributors should write, run, and reason about tests in LLM4S**. It is intended for contributors adding new features, fixing bugs, or refactoring existing code.
 
-> This guide focuses on *test design and contributor practices*. For coverage tooling, thresholds, and CI enforcement, see **Reference → Test Coverage**.
+> This guide focuses on *test design and contributor practices*. For coverage tooling, thresholds, and CI enforcement, see the [Test Coverage (scoverage)](../reference/test-coverage) guide.
 
 ---
 
